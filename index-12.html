@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#02050b" />
+<meta name="robots" content="noindex, nofollow" />
+<title>SELF XT · System Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Sora:wght@300;400;500;600&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#02050b; --panel:rgba(8,18,36,.58); --panel-solid:#07101f;
+  --line:rgba(74,158,255,.14); --line-hi:rgba(74,190,255,.38);
+  --blue:#2f8cff; --cyan:#34d8ff; --green:#2fe38a; --violet:#a592ff; --slate:#6f86ad;
+  --text:#e8f1ff; --mute:#8497b6; --dim:#51627f;
+  --side:78px; --dx:1; --ease:cubic-bezier(.2,.7,.2,1);
+  --display:'Chakra Petch','Vazirmatn','Segoe UI',Tahoma,sans-serif;
+  --ui:'Sora','Vazirmatn','Segoe UI',Tahoma,sans-serif;
+}
+html[dir="rtl"]{--dx:-1}
+*{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:dark}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+ul{list-style:none}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:6px}
+[hidden]{display:none!important}
+/* Persian letters must stay joined: no letter-spacing */
+html[lang="fa"] *:not(.brand-name){letter-spacing:0!important}
+
+/* ---------- Background ---------- */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.bg-glow{position:absolute;width:62vw;height:62vw;border-radius:50%;filter:blur(120px);opacity:.28}
+.bg-glow--a{background:radial-gradient(circle,#0b4fb3 0%,transparent 70%);top:-28vw;left:-14vw;animation:drift 38s ease-in-out infinite alternate}
+.bg-glow--b{background:radial-gradient(circle,#0a7fa8 0%,transparent 70%);bottom:-34vw;right:-18vw;opacity:.2;animation:drift 46s ease-in-out infinite alternate-reverse}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;opacity:.28;mask-image:radial-gradient(ellipse at 50% 20%,#000 10%,transparent 72%);-webkit-mask-image:radial-gradient(ellipse at 50% 20%,#000 10%,transparent 72%)}
+#particles{position:absolute;inset:0;width:100%;height:100%}
+@keyframes drift{to{transform:translate3d(8vw,6vw,0) scale(1.1)}}
+
+/* ---------- Layout ---------- */
+.app{position:relative;z-index:1;display:grid;grid-template-columns:var(--side) minmax(0,1fr);min-height:100vh}
+.main{padding:28px clamp(18px,3vw,44px) 48px;max-width:1560px;width:100%;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;margin-top:26px}
+.span-12{grid-column:span 12}.span-8{grid-column:span 8}.span-7{grid-column:span 7}.span-5{grid-column:span 5}.span-4{grid-column:span 4}
+
+/* ---------- Navigation ---------- */
+.nav{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 0;border-inline-end:1px solid var(--line);background:rgba(3,8,17,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.nav-logo{font-family:var(--display);font-weight:700;font-size:15px;color:var(--cyan);width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--line-hi);border-radius:12px;margin-bottom:22px;box-shadow:0 0 22px rgba(52,216,255,.14) inset;direction:ltr}
+.nav-item{position:relative;width:48px;height:48px;display:grid;place-items:center;border-radius:12px;color:var(--mute);transition:color .25s,background .25s}
+.nav-item svg{width:21px;height:21px}
+.nav-item em{position:absolute;inset-inline-start:58px;font-style:normal;font-size:12px;white-space:nowrap;padding:5px 10px;border-radius:8px;background:var(--panel-solid);border:1px solid var(--line);color:var(--text);opacity:0;transform:translateX(calc(var(--dx) * -4px));pointer-events:none;transition:.2s}
+.nav-item:hover{color:var(--text);background:rgba(47,140,255,.1)}
+.nav-item:hover em,.nav-item:focus-visible em{opacity:1;transform:none}
+.nav-item.is-active{color:var(--cyan);background:rgba(47,140,255,.14)}
+.nav-item.is-active::before{content:"";position:absolute;inset-inline-start:-15px;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+.nav-item--end{margin-top:auto}
+
+/* ---------- Top bar ---------- */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-name{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(30px,4vw,44px);letter-spacing:.14em;line-height:1;text-shadow:0 0 28px rgba(47,140,255,.35);direction:ltr;text-align:start}
+.brand-sub{margin-top:8px;font-size:12px;letter-spacing:.42em;color:var(--cyan);opacity:.9}
+html[lang="fa"] .brand-sub{font-size:14px;margin-top:6px}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chip{font-family:var(--display);font-size:12px;letter-spacing:.1em;padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--mute);background:rgba(8,18,36,.5);direction:ltr}
+.lang-btn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:7px 14px;border-radius:999px;border:1px solid var(--line-hi);background:rgba(47,140,255,.08);font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;letter-spacing:.12em;color:var(--cyan);transition:background .25s,box-shadow .25s}
+.lang-btn svg{width:16px;height:16px;transition:transform .8s var(--ease)}
+.lang-btn:hover{background:rgba(47,140,255,.18);box-shadow:0 0 22px -6px var(--blue)}
+.lang-btn:hover svg{transform:rotate(180deg)}
+.status-pill{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.14em;padding:8px 16px;border-radius:999px;border:1px solid rgba(47,227,138,.28);background:rgba(47,227,138,.07);color:var(--green);transition:color .6s,border-color .6s,background .6s}
+.status-pill--sm{padding:5px 12px;font-size:11px}
+.status-pill[data-status="offline"]{color:var(--slate);border-color:rgba(111,134,173,.3);background:rgba(111,134,173,.07)}
+
+.dot{position:relative;width:8px;height:8px;border-radius:50%;background:currentColor;flex:none;transition:background .6s,box-shadow .6s;box-shadow:0 0 8px currentColor}
+.dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid currentColor;opacity:0;animation:ring-pulse 2.8s ease-out infinite}
+[data-status="offline"] .dot{box-shadow:none}
+[data-status="offline"] .dot::after{animation:none}
+@keyframes ring-pulse{0%{transform:scale(.6);opacity:.55}100%{transform:scale(1.9);opacity:0}}
+
+/* ---------- Panels ---------- */
+.panel{position:relative;padding:22px 24px 24px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(14,32,62,.5),var(--panel));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 20px 50px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(120,190,255,.06);transition:border-color .35s}
+.panel:hover{border-color:rgba(74,158,255,.24)}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.panel-head .panel-title{margin-bottom:0}
+.panel-title{font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.26em;color:var(--mute);margin-bottom:20px}
+html[lang="fa"] .panel-title{font-size:15px;font-weight:700;color:#a9bad6}
+.panel-note{font-size:11px;color:var(--dim)}
+.empty{color:var(--mute);max-width:64ch;margin-top:16px}
+
+.reveal{opacity:0;transform:translateY(14px);animation:rise .9s var(--ease) forwards;animation-delay:calc(var(--i,0) * 80ms)}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* ---------- Live overview with orbiting-light rings ---------- */
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.stat{--rs:clamp(118px,10.5vw,158px);display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 12px 22px;border-radius:16px;border:1px solid var(--line);background:linear-gradient(170deg,rgba(47,140,255,.09),rgba(47,140,255,.012) 65%);transition:border-color .3s,transform .4s var(--ease),box-shadow .3s}
+.stat:hover{border-color:var(--line-hi);transform:translateY(-3px);box-shadow:0 0 34px -12px var(--c)}
+.stat-label{margin-top:18px;font-size:14px;font-weight:500;color:var(--text)}
+.stat-sub{margin-top:2px;font-size:12px;color:var(--dim)}
+
+.ring{position:relative;width:var(--rs);height:var(--rs);display:grid;place-items:center;direction:ltr}
+.ring::before{content:"";position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--c) 14%,transparent),transparent 70%)}
+.ring-spin{position:absolute;inset:0;border-radius:50%;animation:spin 8s linear infinite}
+.ring-comet{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 52%,var(--c) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));filter:drop-shadow(0 0 6px var(--c))}
+.ring-head{position:absolute;top:-2px;left:50%;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px var(--c),0 0 18px 5px var(--c)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring-svg circle{fill:none}
+.ring-track{stroke:rgba(120,170,255,.12);stroke-width:2.4}
+.ring-prog{stroke:var(--c);stroke-width:2.4;stroke-linecap:round;transform:rotate(-90deg);transform-origin:60px 60px;stroke-dasharray:0 100;transition:stroke-dasharray 1.6s var(--ease);filter:drop-shadow(0 0 3px var(--c))}
+.ring-dots{stroke:rgba(120,190,255,.28);stroke-width:1;stroke-dasharray:1 7;transform-origin:60px 60px;animation:spin 60s linear infinite reverse}
+.ring-num{position:relative;font-family:var(--display);font-weight:600;font-size:calc(var(--rs) * .26);line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 22px var(--c)}
+
+/* ---------- Plans ---------- */
+.plan{display:grid;grid-template-columns:minmax(150px,1fr) minmax(120px,1.2fr) auto;align-items:center;gap:18px 22px;padding:18px 16px;margin:0 -16px;border-top:1px solid var(--line);border-radius:12px;transition:background .3s}
+.plan:first-child{border-top:0}
+.plan:hover{background:rgba(47,140,255,.07)}
+.plan-id{display:flex;align-items:center;gap:14px}
+.plan-ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);border:1px solid color-mix(in srgb,var(--c) 30%,transparent);flex:none}
+.plan-ico svg{width:19px;height:19px}
+.plan-name{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.06em}
+html[lang="fa"] .plan-name{font-size:16px;font-weight:700}
+.plan-tag{font-size:12px;color:var(--c)}
+.bar{height:6px;border-radius:6px;background:rgba(120,170,255,.12);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 55%,transparent),var(--c));box-shadow:0 0 10px var(--c);transition:width 1.4s var(--ease)}
+.bar-cap{margin-top:7px;font-size:11px;color:var(--dim)}
+.plan-metrics{display:flex;gap:clamp(16px,2.4vw,32px)}
+.metric{min-width:54px}
+.metric dt{font-size:11px;color:var(--dim)}
+.metric dd{font-family:var(--display);font-size:20px;font-weight:600;margin-top:1px;font-variant-numeric:tabular-nums}
+
+/* ---------- Distribution donut ---------- */
+.dist{display:flex;align-items:center;gap:28px;flex-wrap:wrap;justify-content:center}
+.donut{position:relative;width:170px;height:170px;flex:none;direction:ltr}
+.donut svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.donut circle{fill:none;stroke-width:9;transition:stroke-dasharray 1.4s var(--ease),stroke-dashoffset 1.4s var(--ease)}
+.donut .seg{filter:drop-shadow(0 0 5px currentColor)}
+.donut-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.donut-center b{font-family:var(--display);font-size:34px;font-weight:600;line-height:1}
+.donut-center span{font-size:12px;color:var(--mute);margin-top:4px}
+.legend{display:grid;gap:14px;min-width:170px;flex:1}
+.legend li{display:flex;align-items:center;gap:10px}
+.legend i{width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c);flex:none}
+.legend span{flex:1;font-size:13px}
+.legend b{font-family:var(--display);font-weight:600;font-size:16px}
+.legend small{color:var(--dim);font-size:12px;min-width:38px;text-align:end}
+
+/* ---------- Latest selfs ---------- */
+.user{display:grid;grid-template-columns:minmax(0,1.4fr) auto auto minmax(80px,auto);align-items:center;gap:12px 16px;padding:12px 8px;margin:0 -8px;border-top:1px solid var(--line);border-radius:10px;transition:background .3s}
+.user:first-child{border-top:0}
+.user:hover{background:rgba(47,140,255,.07)}
+.user.is-new{animation:slideIn .7s var(--ease)}
+.user-id{display:flex;align-items:center;gap:12px;min-width:0}
+.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:13px;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 40%,transparent);background:color-mix(in srgb,var(--c) 10%,transparent);flex:none;text-transform:uppercase}
+.user-name{font-family:'Chakra Petch',sans-serif;font-size:14px;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr}
+.tag{font-size:12px;padding:3px 10px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);border:1px solid color-mix(in srgb,var(--c) 28%,transparent);white-space:nowrap}
+.state{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--green);white-space:nowrap}
+.state i{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.state[data-s="finished"]{color:var(--slate)}
+.state[data-s="finished"] i{box-shadow:none}
+.user-time{font-size:12px;color:var(--dim);text-align:end;white-space:nowrap}
+
+/* ---------- Activity ---------- */
+.feed li{display:flex;align-items:center;gap:14px;padding:13px 0;border-top:1px solid var(--line)}
+.feed li:first-child{border-top:0}
+.feed li.is-new{animation:slideIn .6s var(--ease)}
+@keyframes slideIn{from{opacity:0;transform:translateX(calc(var(--dx) * -14px));background:rgba(47,140,255,.14)}to{opacity:1;transform:none}}
+.feed-ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--blue);background:rgba(47,140,255,.1);flex:none}
+.feed-ico svg{width:15px;height:15px}
+.feed-msg{font-size:13px;flex:1;min-width:0}
+.feed-time{font-family:var(--display);font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ---------- Chart ---------- */
+.chart-wrap{position:relative;height:clamp(240px,30vw,340px);direction:ltr}
+#chart{width:100%;height:100%;display:block}
+.tooltip{position:absolute;top:0;left:0;pointer-events:none;padding:8px 12px;border-radius:10px;background:rgba(5,12,26,.92);border:1px solid var(--line-hi);box-shadow:0 8px 30px rgba(0,0,0,.5),0 0 20px -6px rgba(47,140,255,.5);font-size:12px;white-space:nowrap;transform:translate(-50%,-110%)}
+.tooltip b{display:block;font-family:var(--display);font-size:16px;font-weight:600;color:var(--cyan)}
+.tooltip span{color:var(--mute)}
+
+/* ---------- Shop / system / settings ---------- */
+.kv>div{display:flex;justify-content:space-between;align-items:baseline;padding:16px 0;border-top:1px solid var(--line)}
+.kv>div:first-child{border-top:0;padding-top:4px}
+.kv dt{color:var(--mute)}
+.kv dd{font-family:var(--display);font-weight:600;font-size:30px;font-variant-numeric:tabular-nums}
+.sysinfo{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.sysinfo>div{padding:16px 18px;border-radius:12px;border:1px solid var(--line);background:rgba(47,140,255,.04);transition:border-color .3s,background .3s}
+.sysinfo>div:hover{border-color:var(--line-hi);background:rgba(47,140,255,.08)}
+.sysinfo dt{font-size:12px;color:var(--dim)}
+.sysinfo dd{margin-top:6px;font-family:var(--display);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.settings>div{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 0;border-top:1px solid var(--line)}
+.settings>div:first-child{border-top:0;padding-top:0}
+.settings dd{display:flex;gap:10px;flex-wrap:wrap}
+.btn{cursor:pointer;padding:9px 18px;border-radius:10px;border:1px solid var(--line-hi);background:transparent;font-size:13px;transition:background .25s,box-shadow .25s}
+.btn:hover{background:rgba(47,140,255,.12)}
+.btn--primary{background:rgba(47,140,255,.2);border-color:rgba(52,216,255,.5)}
+.btn--primary:hover{background:rgba(47,140,255,.32)}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1280px){
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .span-7,.span-5,.span-8,.span-4{grid-column:span 12}
+  .sysinfo{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .nav{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;justify-content:space-around;gap:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom));border-inline-end:0;border-top:1px solid var(--line);background:rgba(3,8,17,.9);z-index:20}
+  .nav-logo,.nav-item em{display:none}
+  .nav-item{width:44px;height:44px}
+  .nav-item--end{margin-top:0}
+  .nav-item.is-active::before{inset-inline-start:12px;inset-inline-end:12px;top:-9px;bottom:auto;width:auto;height:3px}
+  .main{padding:20px 14px 96px}
+  .grid{gap:14px;margin-top:20px}
+  .panel{padding:18px 14px 20px}
+  .plan{grid-template-columns:1fr;margin:0 -6px;padding:16px 6px}
+  .plan-metrics{justify-content:space-between}
+  .user{grid-template-columns:1fr auto;margin:0 -4px;padding:12px 4px}
+  .user .tag{justify-self:start}
+  .user-time{text-align:start}
+}
+@media (max-width:620px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stat:last-child{grid-column:span 2}
+  .stat{--rs:clamp(112px,32vw,140px);padding:20px 8px 18px}
+  .sysinfo{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dist{justify-content:center}
+  .brand-sub{letter-spacing:.3em}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .reveal{opacity:1;transform:none}
+}
+
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <div class="bg-glow bg-glow--a"></div>
+  <div class="bg-glow bg-glow--b"></div>
+  <div class="bg-grid"></div>
+  <canvas id="particles"></canvas>
+</div>
+
+<div class="app">
+  <nav class="nav" aria-label="Main">
+    <div class="nav-logo" aria-hidden="true">XT</div>
+    <a class="nav-item" href="#/dashboard" data-view="dashboard"><span data-icon="dashboard"></span><em data-i18n="nav.dashboard"></em></a>
+    <a class="nav-item" href="#/selfs" data-view="selfs"><span data-icon="selfs"></span><em data-i18n="nav.selfs"></em></a>
+    <a class="nav-item" href="#/plans" data-view="plans"><span data-icon="plans"></span><em data-i18n="nav.plans"></em></a>
+    <a class="nav-item" href="#/shop" data-view="shop"><span data-icon="shop"></span><em data-i18n="nav.shop"></em></a>
+    <a class="nav-item" href="#/analytics" data-view="analytics"><span data-icon="analytics"></span><em data-i18n="nav.analytics"></em></a>
+    <a class="nav-item" href="#/activity" data-view="activity"><span data-icon="activity"></span><em data-i18n="nav.activity"></em></a>
+    <a class="nav-item nav-item--end" href="#/settings" data-view="settings"><span data-icon="settings"></span><em data-i18n="nav.settings"></em></a>
+  </nav>
+
+  <main class="main">
+    <header class="topbar reveal" style="--i:0">
+      <div class="brand">
+        <h1 class="brand-name">SELF XT</h1>
+        <p class="brand-sub" data-i18n="brand.sub"></p>
+      </div>
+      <div class="topbar-right">
+        <span class="chip" id="versionChip" data-bind="version"></span>
+        <button class="lang-btn" id="langBtn" type="button" data-i18n-aria="lang.switch">
+          <span data-icon="globe"></span><span id="langLabel">EN</span>
+        </button>
+        <span class="status-pill" id="systemPill" data-status="online"><i class="dot"></i><span id="systemPillText"></span></span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <!-- LIVE OVERVIEW -->
+      <article class="panel span-12 reveal" style="--i:1" data-views="dashboard selfs">
+        <h2 class="panel-title" data-i18n="overview.title"></h2>
+        <div class="stats">
+          <div class="stat" style="--c:#2f8cff" data-stat="total" data-path="selfs.total">
+            <div class="ring"></div><p class="stat-label" data-i18n="stat.total"></p><p class="stat-sub" data-i18n="stat.totalSub"></p>
+          </div>
+          <div class="stat" style="--c:#2fe38a" data-stat="active" data-path="selfs.active">
+            <div class="ring"></div><p class="stat-label" data-i18n="stat.active"></p><p class="stat-sub" data-i18n="stat.activeSub"></p>
+          </div>
+          <div class="stat" style="--c:#7d93c4" data-stat="finished" data-path="selfs.finished">
+            <div class="ring"></div><p class="stat-label" data-i18n="stat.finished"></p><p class="stat-sub" data-i18n="stat.finishedSub"></p>
+          </div>
+          <div class="stat" style="--c:#34d8ff" data-stat="online" data-path="onlineUsers">
+            <div class="ring"></div><p class="stat-label" data-i18n="stat.online"></p><p class="stat-sub" data-i18n="stat.onlineSub"></p>
+          </div>
+          <div class="stat" style="--c:#2f8cff" data-stat="registered" data-path="registeredPlayers">
+            <div class="ring"></div><p class="stat-label" data-i18n="stat.registered"></p><p class="stat-sub" data-i18n="stat.registeredSub"></p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SELF PLANS -->
+      <article class="panel span-7 reveal" style="--i:2" data-views="dashboard selfs plans">
+        <h2 class="panel-title" data-i18n="plans.title"></h2>
+        <ul class="plans" id="planList"></ul>
+      </article>
+
+      <!-- DISTRIBUTION -->
+      <article class="panel span-5 reveal" style="--i:3" data-views="dashboard selfs plans">
+        <h2 class="panel-title" data-i18n="dist.title"></h2>
+        <div class="dist">
+          <div class="donut" id="donut"></div>
+          <ul class="legend" id="legend"></ul>
+        </div>
+      </article>
+
+      <!-- LATEST SELFS -->
+      <article class="panel span-7 reveal" style="--i:4" data-views="dashboard selfs">
+        <h2 class="panel-title" data-i18n="users.title"></h2>
+        <ul class="users" id="userList"></ul>
+      </article>
+
+      <!-- LIVE ACTIVITY -->
+      <article class="panel span-5 reveal" style="--i:5" data-views="dashboard activity">
+        <h2 class="panel-title" data-i18n="activity.title"></h2>
+        <ul class="feed" id="activityList"></ul>
+      </article>
+
+      <!-- CHART -->
+      <article class="panel span-8 reveal" style="--i:6" data-views="dashboard analytics">
+        <div class="panel-head">
+          <h2 class="panel-title" data-i18n="chart.title"></h2>
+          <span class="panel-note" data-i18n="chart.note"></span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart" role="img"></canvas>
+          <div class="tooltip" id="chartTip" hidden></div>
+        </div>
+      </article>
+
+      <!-- SELF SHOP -->
+      <article class="panel span-4 reveal" style="--i:7" data-views="dashboard shop">
+        <div class="panel-head">
+          <h2 class="panel-title" data-i18n="shop.title"></h2>
+          <span class="status-pill status-pill--sm" id="shopPill" data-status="online"><i class="dot"></i><span id="shopPillText"></span></span>
+        </div>
+        <dl class="kv">
+          <div><dt data-i18n="shop.orders"></dt><dd data-bind="shop.orders" data-count>0</dd></div>
+          <div><dt data-i18n="shop.users"></dt><dd data-bind="shop.users" data-count>0</dd></div>
+          <div><dt data-i18n="shop.products"></dt><dd data-bind="shop.products" data-count>0</dd></div>
+        </dl>
+      </article>
+
+      <!-- SYSTEM INFORMATION -->
+      <article class="panel span-12 reveal" style="--i:8" data-views="dashboard analytics settings">
+        <h2 class="panel-title" data-i18n="sys.title"></h2>
+        <dl class="sysinfo">
+          <div><dt data-i18n="sys.uptime"></dt><dd data-bind="system.uptimeSec" data-fmt="dur"></dd></div>
+          <div><dt data-i18n="sys.ping"></dt><dd data-bind="system.pingMs" data-fmt="ms"></dd></div>
+          <div><dt data-i18n="sys.cpu"></dt><dd data-bind="system.cpu" data-fmt="pct"></dd></div>
+          <div><dt data-i18n="sys.ram"></dt><dd data-bind="system.ram" data-fmt="pct"></dd></div>
+          <div><dt data-i18n="sys.database"></dt><dd data-bind="system.database" data-fmt="state"></dd></div>
+          <div><dt data-i18n="sys.api"></dt><dd data-bind="system.apiStatus" data-fmt="state"></dd></div>
+        </dl>
+      </article>
+
+      <!-- SETTINGS -->
+      <article class="panel span-12 reveal" style="--i:2" data-views="settings">
+        <h2 class="panel-title" data-i18n="settings.title"></h2>
+        <dl class="settings">
+          <div><dt data-i18n="settings.lang"></dt>
+            <dd><button class="btn" data-action="lang-fa">فارسی</button> <button class="btn" data-action="lang-en">English</button></dd></div>
+          <div><dt data-i18n="settings.sim"></dt>
+            <dd><button class="btn btn--primary" data-action="sim-toggle" id="simBtn"></button></dd></div>
+          <div><dt data-i18n="settings.source"></dt><dd><span class="chip" data-i18n="settings.mock"></span></dd></div>
+        </dl>
+        <p class="empty" data-i18n="settings.note"></p>
+      </article>
+    </section>
+  </main>
+</div>
+
+<script>
+/* js/config.js */
+/* Central configuration. Change these values when the real backend is ready. */
+window.SX = window.SX || {};
+SX.config = {
+  useMock: true,                 // false => api.js calls the real backend
+  simulate: true,                // fake live events while using mock data
+  showMockBadge: false,
+  defaultLang: 'fa',             // 'fa' | 'en'
+  apiBaseUrl: '',                // e.g. 'https://api.your-domain.com'
+  realtime: {
+    transport: 'mock',           // 'mock' | 'websocket' | 'sse'
+    url: '',
+    reconnectMs: 3000
+  }
+};
+
+</script>
+<script>
+/* js/icons.js */
+/* Inline Lucide-style SVG icons (no network needed). */
+(function () {
+  const wrap = (body) =>
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  SX.icons = {
+    dashboard: wrap('<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>'),
+    selfs: wrap('<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/>'),
+    plans: wrap('<path d="m12 2 10 5-10 5L2 7l10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>'),
+    shop: wrap('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
+    analytics: wrap('<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>'),
+    activity: wrap('<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'),
+    settings: wrap('<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'),
+    users: wrap('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    userPlus: wrap('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>'),
+    globe: wrap('<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'),
+    flask: wrap('<path d="M10 2v7.5L4.5 19a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V2"/><path d="M8.5 2h7"/>'),
+    zap: wrap('<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>'),
+    check: wrap('<path d="M20 6 9 17l-5-5"/>'),
+    power: wrap('<path d="M18.4 6.6a9 9 0 1 1-12.8 0"/><path d="M12 2v10"/>')
+  };
+})();
+
+</script>
+<script>
+/* js/i18n.js */
+/* Two languages: Persian (RTL) and English (LTR). */
+(function () {
+  const dict = {
+    en: {
+      'brand.sub': 'SYSTEM MONITOR',
+      'status.online': 'SYSTEM ONLINE', 'status.offline': 'SYSTEM OFFLINE',
+      'state.ok': 'Operational', 'state.na': 'N/A',
+      'nav.dashboard': 'Dashboard', 'nav.selfs': 'Selfs', 'nav.plans': 'Plans', 'nav.shop': 'Self Shop',
+      'nav.analytics': 'Analytics', 'nav.activity': 'Activity', 'nav.settings': 'Settings',
+      'lang.switch': 'Change language',
+      'overview.title': 'LIVE OVERVIEW',
+      'stat.total': 'Selfs Taken', 'stat.totalSub': 'All time',
+      'stat.active': 'Active Selfs', 'stat.activeSub': 'Running right now',
+      'stat.finished': 'Finished Selfs', 'stat.finishedSub': 'Expired or completed',
+      'stat.online': 'Online Users', 'stat.onlineSub': 'Playing right now',
+      'stat.registered': 'Players', 'stat.registeredSub': 'Users who started the bot',
+      'plans.title': 'SELF PLANS',
+      'plan.test': 'Test Self', 'plan.regular': 'Regular Self', 'plan.pro': 'Pro Self',
+      'plan.testTag': 'Free', 'plan.regularTag': 'Standard', 'plan.proTag': 'Premium',
+      'plan.activeShare': '{p}% active',
+      'metric.taken': 'Taken', 'metric.active': 'Active', 'metric.finished': 'Finished',
+      'dist.title': 'SELF DISTRIBUTION', 'dist.center': 'Selfs',
+      'users.title': 'LATEST SELFS',
+      'users.active': 'Active', 'users.finished': 'Finished',
+      'activity.title': 'LIVE ACTIVITY',
+      'act.selfStarted': '{plan} started for {user}',
+      'act.selfFinished': "{user}'s Self finished and shut down",
+      'act.register': 'A new player joined SELF XT',
+      'act.order': 'New Self Shop order · #{n}',
+      'act.db': 'Database synced successfully',
+      'act.boot': 'System running normally',
+      'chart.title': 'SYSTEM ACTIVITY', 'chart.note': 'Last 24 hours',
+      'shop.title': 'SELF SHOP', 'shop.online': 'ONLINE', 'shop.offline': 'OFFLINE',
+      'shop.orders': 'Orders', 'shop.users': 'Users', 'shop.products': 'Products',
+      'sys.title': 'SYSTEM INFORMATION',
+      'sys.uptime': 'Uptime', 'sys.ping': 'Ping', 'sys.cpu': 'CPU', 'sys.ram': 'RAM',
+      'sys.database': 'Database', 'sys.api': 'API Status',
+      'dur.dh': '{d}d {h}h', 'dur.hm': '{h}h {m}m',
+      'time.now': 'just now', 'time.m': '{n}m ago', 'time.h': '{n}h ago', 'time.d': '{n}d ago',
+      'settings.title': 'SETTINGS',
+      'settings.lang': 'Language', 'settings.sim': 'Live simulation',
+      'settings.on': 'On', 'settings.off': 'Off',
+      'settings.source': 'Data source', 'settings.mock': 'Mock data (demo)',
+      'settings.note': 'Live simulation generates sample events so the dashboard feels alive. Turn it off once the real API is connected.'
+    },
+    fa: {
+      'brand.sub': 'مرکز پایش سیستم',
+      'status.online': 'سیستم آنلاین', 'status.offline': 'سیستم آفلاین',
+      'state.ok': 'پایدار', 'state.na': 'نامشخص',
+      'nav.dashboard': 'داشبورد', 'nav.selfs': 'سلف‌ها', 'nav.plans': 'پلن‌ها', 'nav.shop': 'فروشگاه سلف',
+      'nav.analytics': 'تحلیل‌ها', 'nav.activity': 'فعالیت‌ها', 'nav.settings': 'تنظیمات',
+      'lang.switch': 'تغییر زبان',
+      'overview.title': 'نمای زنده',
+      'stat.total': 'کل سلف‌های گرفته‌شده', 'stat.totalSub': 'از ابتدا تا امروز',
+      'stat.active': 'سلف‌های فعال', 'stat.activeSub': 'هم‌اکنون در حال اجرا',
+      'stat.finished': 'سلف‌های تمام‌شده', 'stat.finishedSub': 'منقضی یا تکمیل‌شده',
+      'stat.online': 'کاربران آنلاین', 'stat.onlineSub': 'هم‌اکنون در بازی',
+      'stat.registered': 'تعداد بازیکنان', 'stat.registeredSub': 'کاربرانی که ربات را استارت کرده‌اند',
+      'plans.title': 'پلن‌های سلف',
+      'plan.test': 'سلف تست', 'plan.regular': 'سلف عادی', 'plan.pro': 'سلف پرو',
+      'plan.testTag': 'رایگان', 'plan.regularTag': 'استاندارد', 'plan.proTag': 'ویژه',
+      'plan.activeShare': '{p}٪ فعال',
+      'metric.taken': 'گرفته‌شده', 'metric.active': 'فعال', 'metric.finished': 'تمام‌شده',
+      'dist.title': 'توزیع سلف‌ها', 'dist.center': 'سلف',
+      'users.title': 'آخرین سلف‌ها',
+      'users.active': 'فعال', 'users.finished': 'تمام‌شده',
+      'activity.title': 'فعالیت زنده',
+      'act.selfStarted': '{plan} برای {user} روشن شد',
+      'act.selfFinished': 'سلف {user} به پایان رسید و خاموش شد',
+      'act.register': 'بازیکن تازه‌ای به خانواده SELF XT پیوست',
+      'act.order': 'سفارش جدید در فروشگاه سلف ثبت شد · #{n}',
+      'act.db': 'پایگاه‌داده با موفقیت همگام شد',
+      'act.boot': 'سیستم بدون مشکل در حال اجراست',
+      'chart.title': 'نبض سیستم', 'chart.note': '۲۴ ساعت اخیر',
+      'shop.title': 'فروشگاه سلف', 'shop.online': 'آنلاین', 'shop.offline': 'آفلاین',
+      'shop.orders': 'سفارش‌ها', 'shop.users': 'کاربران', 'shop.products': 'محصولات',
+      'sys.title': 'اطلاعات سیستم',
+      'sys.uptime': 'مدت روشن بودن', 'sys.ping': 'پینگ', 'sys.cpu': 'پردازنده', 'sys.ram': 'حافظه',
+      'sys.database': 'پایگاه‌داده', 'sys.api': 'وضعیت API',
+      'dur.dh': '{d} روز و {h} ساعت', 'dur.hm': '{h} ساعت و {m} دقیقه',
+      'time.now': 'همین الان', 'time.m': '{n} دقیقه پیش', 'time.h': '{n} ساعت پیش', 'time.d': '{n} روز پیش',
+      'settings.title': 'تنظیمات',
+      'settings.lang': 'زبان', 'settings.sim': 'شبیه‌سازی زنده',
+      'settings.on': 'روشن', 'settings.off': 'خاموش',
+      'settings.source': 'منبع داده', 'settings.mock': 'داده نمونه (دمو)',
+      'settings.note': 'شبیه‌سازی زنده رویدادهای نمونه می‌سازد تا داشبورد زنده به نظر برسد. بعد از اتصال API واقعی آن را خاموش کنید.'
+    }
+  };
+
+  let lang = SX.config.defaultLang;
+  try { const s = localStorage.getItem('sx-lang'); if (s === 'fa' || s === 'en') lang = s; } catch (e) {}
+  const listeners = [];
+
+  const t = (key, params) => {
+    let s = (dict[lang] && dict[lang][key]) || dict.en[key] || key;
+    if (params) for (const k in params) s = s.replace('{' + k + '}', params[k]);
+    return s;
+  };
+  const locale = () => (lang === 'fa' ? 'fa-IR' : 'en-US');
+  const num = (n) => new Intl.NumberFormat(locale()).format(Math.round(Number(n) || 0));
+  const digits = (str) => (lang === 'fa' ? String(str).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]) : String(str));
+  const rel = (iso) => {
+    const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 45) return t('time.now');
+    if (s < 3600) return t('time.m', { n: num(Math.max(1, Math.round(s / 60))) });
+    if (s < 86400) return t('time.h', { n: num(Math.round(s / 3600)) });
+    return t('time.d', { n: num(Math.round(s / 86400)) });
+  };
+  const clock = (iso) => new Date(iso).toLocaleTimeString(lang === 'fa' ? 'fa-IR' : 'en-GB', { timeZone: 'Asia/Tehran', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  function apply() {
+    const root = document.documentElement;
+    root.lang = lang; root.dir = lang === 'fa' ? 'rtl' : 'ltr';
+    document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-aria]').forEach((el) => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  }
+  function setLang(l) {
+    lang = l;
+    try { localStorage.setItem('sx-lang', l); } catch (e) {}
+    apply();
+    listeners.forEach((fn) => fn(l));
+  }
+
+  SX.i18n = { t, num, digits, rel, clock, apply, setLang, get lang() { return lang; }, onChange: (fn) => listeners.push(fn) };
+})();
+
+</script>
+<script>
+/* js/auth.js */
+/* Auth placeholder. No real login yet. Never put keys or passwords in the frontend. */
+SX.auth = {
+  isAuthenticated() { return true; },
+  headers() { return {}; },
+  async login() { throw new Error('Auth is not implemented yet.'); },
+  async logout() {}
+};
+
+</script>
+<script>
+/* js/api.js */
+/* API layer: the ONLY place that knows where data comes from.
+   Now: realistic mock data. Later: SX.config.useMock = false and implement
+   GET /api/snapshot and GET /api/analytics returning the same shapes. */
+(function () {
+  const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+  const ago = (sec) => new Date(Date.now() - sec * 1000).toISOString();
+
+  function mockSnapshot() {
+    return {
+      systemOnline: true,
+      version: 'v6.5',
+      onlineUsers: 38,
+      registeredPlayers: 811,
+      limits: { online: 120 },
+      selfs: { total: 221, active: 192, finished: 29 },
+      plans: [
+        { id: 'test',    status: 'online', total: 79,  active: 62, finished: 17 },
+        { id: 'regular', status: 'online', total: 38,  active: 34, finished: 4 },
+        { id: 'pro',     status: 'online', total: 104, active: 96, finished: 8 }
+      ],
+      latestSelfs: [
+        { id: 'u8', user: 'sara_dev', plan: 'pro',     status: 'active',   startedAt: ago(140) },
+        { id: 'u7', user: 'ali.rz',   plan: 'regular', status: 'active',   startedAt: ago(610) },
+        { id: 'u6', user: 'nima.x',   plan: 'test',    status: 'active',   startedAt: ago(1500) },
+        { id: 'u5', user: 'mehdi_k',  plan: 'regular', status: 'active',   startedAt: ago(3900) },
+        { id: 'u4', user: 'hana_77',  plan: 'test',    status: 'finished', startedAt: ago(9800) },
+        { id: 'u3', user: 'arash.p',  plan: 'pro',     status: 'active',   startedAt: ago(15000) },
+        { id: 'u2', user: 'mina_fx',  plan: 'regular', status: 'finished', startedAt: ago(30000) },
+        { id: 'u1', user: 'kian_s',   plan: 'regular', status: 'active',   startedAt: ago(52000) }
+      ],
+      shop: { status: 'online', orders: 96, users: 74, products: 12 },
+      system: { uptimeSec: 12 * 86400 + 7 * 3600 + 1500, pingMs: 24, cpu: 37, ram: 52, database: 'ok', apiStatus: 'ok' },
+      activities: [
+        { id: 'a7', type: 'self',   key: 'act.selfStarted',  params: { user: 'sara_dev', plan: 'pro' },    time: ago(140) },
+        { id: 'a6', type: 'shop',   key: 'act.order',        params: { n: 96 },                          time: ago(380) },
+        { id: 'a5', type: 'user',   key: 'act.register',     params: {},                                  time: ago(560) },
+        { id: 'a4', type: 'self',   key: 'act.selfStarted',  params: { user: 'ali.rz', plan: 'regular' }, time: ago(610) },
+        { id: 'a3', type: 'db',     key: 'act.db',           params: {},                                  time: ago(900) },
+        { id: 'a2', type: 'self',   key: 'act.selfFinished', params: { user: 'hana_77' },                 time: ago(1300) },
+        { id: 'a1', type: 'system', key: 'act.boot',         params: {},                                  time: ago(2400) }
+      ]
+    };
+  }
+
+  function mockAnalytics() {
+    const h = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tehran', hour: '2-digit', hour12: false }).format(new Date()), 10) % 24, hours = [], values = [];
+    for (let i = 23; i >= 0; i--) {
+      const hr = (h - i + 24) % 24;
+      hours.push(hr);
+      const day = Math.sin(((hr - 6) / 24) * Math.PI * 2 - 0.4);           // quiet at night, busy in the evening
+      values.push(Math.max(8, Math.round(26 + 18 * day + 4 * Math.sin(hr * 1.7))));
+    }
+    return { hours, values };
+  }
+
+  async function request(path) {
+    const res = await fetch(SX.config.apiBaseUrl + path, {
+      headers: { Accept: 'application/json', ...SX.auth.headers() }, credentials: 'include'
+    });
+    if (!res.ok) throw new Error('API ' + res.status + ' on ' + path);
+    return res.json();
+  }
+
+  SX.api = {
+    async getSnapshot()  { if (SX.config.useMock) { await delay(350); return mockSnapshot(); } return request('/api/snapshot'); },
+    async getAnalytics() { if (SX.config.useMock) { await delay(350); return mockAnalytics(); } return request('/api/analytics'); }
+  };
+})();
+
+</script>
+<script>
+/* js/store.js */
+/* Central state. The UI only reads from here; only api.js / realtime.js write to it. */
+(function () {
+  const listeners = new Set();
+  let state = {
+    systemOnline: true, version: 'v6.5', onlineUsers: 0, registeredPlayers: 0,
+    limits: { online: 120 },
+    selfs: { total: 0, active: 0, finished: 0 },
+    plans: [], latestSelfs: [],
+    shop: { status: 'online', orders: 0, users: 0, products: 0 },
+    system: { uptimeSec: 0, pingMs: 0, cpu: 0, ram: 0, database: 'na', apiStatus: 'na' },
+    activities: [],
+    analytics: { hours: [], values: [] }
+  };
+
+  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  const merge = (base, patch) => {
+    const out = { ...base };
+    for (const k in patch) out[k] = isObj(patch[k]) && isObj(base[k]) ? { ...base[k], ...patch[k] } : patch[k];
+    return out;
+  };
+  function set(patch) { state = merge(state, patch); listeners.forEach((fn) => fn(state)); }
+
+  /* Realtime events (WebSocket / SSE / simulation):
+       { type: 'snapshot' | 'patch', payload: { ...any part of the state } }
+       { type: 'activity', payload: { type, key, params, time? } } */
+  function applyEvent(ev) {
+    const p = ev.payload || {};
+    if (ev.type === 'snapshot' || ev.type === 'patch') set(p);
+    else if (ev.type === 'activity') {
+      const item = { id: p.id || 'evt-' + Date.now() + Math.random().toString(36).slice(2, 6), time: new Date().toISOString(), ...p };
+      set({ activities: [item, ...state.activities].slice(0, 30) });
+    }
+  }
+
+  SX.store = { get: () => state, set, applyEvent, subscribe(fn) { listeners.add(fn); fn(state); return () => listeners.delete(fn); } };
+})();
+
+</script>
+<script>
+/* js/sim.js */
+/* Development-only simulation so the demo feels alive. Remove when the API is live. */
+(function () {
+  const names = ['reza_m', 'sina.k', 'dara_x', 'neda.s', 'omid_77', 'yas.dev', 'parsa_t', 'ava.fx', 'bardia', 'taha_r', 'shayan.z', 'mahsa_q'];
+  let timer = null, running = false, uid = 100, order = 96;
+  const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+  const pick = (a) => a[rnd(0, a.length - 1)];
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const emit = (ev) => SX.realtime.emit(ev);
+
+  function tick() {
+    const s = SX.store.get(), r = Math.random();
+    const patch = {
+      onlineUsers: clamp(s.onlineUsers + rnd(-2, 2), 24, 62),
+      system: { pingMs: clamp(s.system.pingMs + rnd(-2, 2), 16, 45), cpu: clamp(s.system.cpu + rnd(-2, 2), 22, 60), ram: clamp(s.system.ram + rnd(-1, 1), 42, 64), uptimeSec: s.system.uptimeSec + 40 }
+    };
+
+    if (r < 0.32) {                                  // a new Self starts
+      const plan = Math.random() < 0.35 ? 'test' : Math.random() < 0.3 ? 'regular' : 'pro';
+      const user = pick(names);
+      patch.plans = s.plans.map((p) => p.id === plan ? { ...p, total: p.total + 1, active: p.active + 1 } : p);
+      patch.selfs = { total: s.selfs.total + 1, active: s.selfs.active + 1 };
+      patch.latestSelfs = [{ id: 'u' + (++uid), user, plan, status: 'active', startedAt: new Date().toISOString() }, ...s.latestSelfs].slice(0, 8);
+      emit({ type: 'patch', payload: patch });
+      emit({ type: 'activity', payload: { type: 'self', key: 'act.selfStarted', params: { user, plan } } });
+    } else if (r < 0.5) {                            // a Self finishes
+      const row = s.latestSelfs.filter((x) => x.status === 'active').pop();
+      const cands = s.plans.filter((p) => p.active > 1);
+      const plan = row ? row.plan : pick(cands).id;
+      patch.plans = s.plans.map((p) => p.id === plan ? { ...p, active: p.active - 1, finished: p.finished + 1 } : p);
+      patch.selfs = { active: s.selfs.active - 1, finished: s.selfs.finished + 1 };
+      if (row) patch.latestSelfs = s.latestSelfs.map((x) => x.id === row.id ? { ...x, status: 'finished' } : x);
+      emit({ type: 'patch', payload: patch });
+      emit({ type: 'activity', payload: { type: 'self', key: 'act.selfFinished', params: { user: row ? row.user : pick(names) } } });
+    } else if (r < 0.64) {                           // shop order
+      order++;
+      patch.shop = { orders: s.shop.orders + 1 };
+      emit({ type: 'patch', payload: patch });
+      emit({ type: 'activity', payload: { type: 'shop', key: 'act.order', params: { n: order } } });
+    } else if (r < 0.82) {                           // new player started the bot
+      patch.registeredPlayers = s.registeredPlayers + 1;
+      emit({ type: 'patch', payload: patch });
+      emit({ type: 'activity', payload: { type: 'user', key: 'act.register', params: {} } });
+    } else emit({ type: 'patch', payload: patch });
+
+    if (running) timer = setTimeout(tick, rnd(20000, 45000));
+  }
+
+  SX.sim = {
+    get running() { return running; },
+    start() { if (running) return; running = true; timer = setTimeout(tick, 12000); },
+    stop() { running = false; clearTimeout(timer); },
+    toggle() { running ? this.stop() : this.start(); return running; }
+  };
+})();
+
+</script>
+<script>
+/* js/realtime.js */
+/* Realtime layer. Every transport delivers normalized events to store.applyEvent.
+   Set SX.config.realtime.transport to 'websocket' or 'sse' when the backend is ready. */
+(function () {
+  const dispatch = (ev) => SX.store.applyEvent(ev);
+
+  const mock = {
+    start() { if (SX.config.simulate && SX.sim) SX.sim.start(); },
+    stop() { SX.sim && SX.sim.stop(); }
+  };
+
+  function websocket(cfg) {
+    let ws, timer, closed = false;
+    const open = () => {
+      ws = new WebSocket(cfg.url);
+      ws.onmessage = (m) => { try { dispatch(JSON.parse(m.data)); } catch (e) { console.warn('Bad WS message', e); } };
+      ws.onclose = () => { if (!closed) timer = setTimeout(open, cfg.reconnectMs); };
+    };
+    return { start: open, stop() { closed = true; clearTimeout(timer); ws && ws.close(); } };
+  }
+
+  function sse(cfg) {
+    let es;
+    return {
+      start() {
+        es = new EventSource(cfg.url, { withCredentials: true });
+        es.onmessage = (m) => { try { dispatch(JSON.parse(m.data)); } catch (e) { console.warn('Bad SSE message', e); } };
+      },
+      stop() { es && es.close(); }
+    };
+  }
+
+  let active = mock;
+  SX.realtime = {
+    start() {
+      const c = SX.config.realtime;
+      active = c.transport === 'websocket' ? websocket(c) : c.transport === 'sse' ? sse(c) : mock;
+      active.start();
+    },
+    stop() { active.stop(); },
+    emit: dispatch
+  };
+})();
+
+</script>
+<script>
+/* js/ui/particles.js */
+/* Very subtle drifting particles. Pauses when the tab is hidden. */
+SX.Particles = function (canvas) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const ctx = canvas.getContext('2d');
+  let w, h, dpr, parts = [], raf;
+
+  function resize() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    w = canvas.clientWidth; h = canvas.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.round(Math.min(46, (w * h) / 30000));
+    parts = Array.from({ length: n }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      r: Math.random() * 1.3 + .4,
+      vx: (Math.random() - .5) * .12, vy: -(Math.random() * .16 + .04),
+      a: Math.random() * .35 + .12
+    }));
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, w, h);
+    for (const p of parts) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.y < -4) { p.y = h + 4; p.x = Math.random() * w; }
+      if (p.x < -4) p.x = w + 4; else if (p.x > w + 4) p.x = -4;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(80,190,255,${p.a})`;
+      ctx.arc(p.x, p.y, p.r, 0, 6.283);
+      ctx.fill();
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  addEventListener('resize', resize);
+  document.addEventListener('visibilitychange', () => {
+    cancelAnimationFrame(raf);
+    if (!document.hidden) tick();
+  });
+  resize(); tick();
+};
+
+</script>
+<script>
+/* js/ui/chart.js */
+/* Dependency-free smooth area chart: animated data changes, grid, hover tooltip.
+   chart.setData({ labels: [...], values: [...] }) animates from the previous values. */
+SX.Chart = function (canvas, tip, opts) {
+  const fmtN = (opts && opts.fmt) || ((n) => String(Math.round(n)));
+  const ctx = canvas.getContext('2d');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let w = 0, h = 0, dpr = 1;
+  let labels = [], target = [], shown = [], raf, hover = -1;
+  const pad = { l: 44, r: 14, t: 14, b: 28 };
+
+  function resize() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    w = canvas.clientWidth; h = canvas.clientHeight;
+    if (!w || !h) return;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  const niceMax = (v) => {
+    if (v <= 0) return 10;
+    const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+  };
+  const xAt = (i) => pad.l + (shown.length < 2 ? 0 : (i / (shown.length - 1)) * (w - pad.l - pad.r));
+  const yAt = (v, max) => pad.t + (1 - v / max) * (h - pad.t - pad.b);
+
+  function curve(pts) {
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) {
+      const mx = (pts[i - 1][0] + pts[i][0]) / 2;
+      ctx.bezierCurveTo(mx, pts[i - 1][1], mx, pts[i][1], pts[i][0], pts[i][1]);
+    }
+  }
+
+  function draw() {
+    if (!w || !h) return;
+    ctx.clearRect(0, 0, w, h);
+    const max = niceMax(Math.max(...target, 0));
+    ctx.font = '11px Sora, Vazirmatn, system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+
+    // grid + y labels
+    ctx.lineWidth = 1;
+    for (let g = 0; g <= 4; g++) {
+      const y = Math.round(yAt((max / 4) * g, max)) + .5;
+      ctx.strokeStyle = 'rgba(74,158,255,.09)';
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(132,151,182,.8)'; ctx.textAlign = 'right';
+      ctx.fillText(fmtN((max / 4) * g), pad.l - 10, y);
+    }
+    // x labels
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const step = Math.ceil(labels.length / Math.max(2, Math.floor((w - pad.l) / 70)));
+    labels.forEach((l, i) => { if (i % step === 0) ctx.fillText(l, xAt(i), h - 6); });
+
+    if (shown.length < 2) return;
+    const pts = shown.map((v, i) => [xAt(i), yAt(v, max)]);
+
+    // area
+    const base = h - pad.b;
+    const fill = ctx.createLinearGradient(0, pad.t, 0, base);
+    fill.addColorStop(0, 'rgba(47,140,255,.32)'); fill.addColorStop(1, 'rgba(47,140,255,0)');
+    ctx.beginPath(); curve(pts);
+    ctx.lineTo(pts[pts.length - 1][0], base); ctx.lineTo(pts[0][0], base); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+
+    // line with soft glow
+    const stroke = ctx.createLinearGradient(pad.l, 0, w - pad.r, 0);
+    stroke.addColorStop(0, '#2f8cff'); stroke.addColorStop(1, '#34d8ff');
+    ctx.save();
+    ctx.shadowColor = 'rgba(52,216,255,.55)'; ctx.shadowBlur = 12;
+    ctx.beginPath(); curve(pts);
+    ctx.strokeStyle = stroke; ctx.lineWidth = 2.2; ctx.stroke();
+    ctx.restore();
+
+    // hover marker
+    if (hover >= 0 && pts[hover]) {
+      const [x, y] = pts[hover];
+      ctx.strokeStyle = 'rgba(52,216,255,.35)'; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, base); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#02050b'; ctx.strokeStyle = '#34d8ff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, 6.283); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  function setData(d, instant) {
+    labels = d.labels || [];
+    const next = d.values || [];
+    const from = shown.length === next.length ? shown.slice() : next.map(() => 0);
+    target = next;
+    cancelAnimationFrame(raf);
+    if (reduced || instant) { shown = next.slice(); draw(); return; }
+    const t0 = performance.now(), dur = 1100;
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+      shown = next.map((v, i) => from[i] + (v - from[i]) * e);
+      draw();
+      if (t < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+
+  function onMove(ev) {
+    if (!shown.length) return;
+    const r = canvas.getBoundingClientRect();
+    const x = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+    const i = Math.max(0, Math.min(shown.length - 1, Math.round(((x - pad.l) / (w - pad.l - pad.r)) * (shown.length - 1))));
+    hover = i; draw();
+    const max = niceMax(Math.max(...target, 0));
+    tip.hidden = false;
+    tip.innerHTML = `<span>${labels[i] ?? ''}</span><b>${fmtN(target[i])}</b>`;
+    tip.style.left = Math.max(40, Math.min(w - 40, xAt(i))) + 'px';
+    tip.style.top = yAt(shown[i], max) + 'px';
+  }
+  function onLeave() { hover = -1; tip.hidden = true; draw(); }
+
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('touchstart', onMove, { passive: true });
+  canvas.addEventListener('touchmove', onMove, { passive: true });
+  canvas.addEventListener('mouseleave', onLeave);
+  canvas.addEventListener('touchend', onLeave);
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+
+  return { setData, resize };
+};
+
+</script>
+<script>
+/* js/app.js */
+/* App entry: renders ONLY from SX.store. No data-fetching logic lives here. */
+(function () {
+  const { store, api, realtime, icons, i18n } = SX;
+  const { t, num } = i18n;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const get = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const PLAN = {
+    test:    { icon: 'flask', color: '#34d8ff', name: 'plan.test',    tag: 'plan.testTag' },
+    regular: { icon: 'selfs', color: '#2f8cff', name: 'plan.regular', tag: 'plan.regularTag' },
+    pro:     { icon: 'zap',   color: '#a592ff', name: 'plan.pro',     tag: 'plan.proTag' }
+  };
+
+  $$('[data-icon]').forEach((el) => { el.innerHTML = icons[el.dataset.icon] || ''; });
+
+  /* ---------- Rings (rotating light + progress arc) ---------- */
+  $$('.stat').forEach((card) => {
+    $('.ring', card).innerHTML = `
+      <div class="ring-spin"><div class="ring-comet"></div><i class="ring-head"></i></div>
+      <svg class="ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="ring-dots" cx="60" cy="60" r="57"/>
+        <circle class="ring-track" cx="60" cy="60" r="51"/>
+        <circle class="ring-prog" cx="60" cy="60" r="51" pathLength="100"/>
+      </svg>
+      <span class="ring-num" data-bind="${card.dataset.path}" data-count>0</span>`;
+  });
+  const ringPct = {
+    total: () => 100,
+    active: (s) => (s.selfs.total ? (s.selfs.active / s.selfs.total) * 100 : 0),
+    finished: (s) => (s.selfs.total ? (s.selfs.finished / s.selfs.total) * 100 : 0),
+    online: (s) => Math.min(100, (s.onlineUsers / (s.limits.online || 100)) * 100),
+    registered: (s) => (s.registeredPlayers ? Math.min(100, (s.selfs.total / s.registeredPlayers) * 100) : 0)
+  };
+
+  /* ---------- Count-up numbers ---------- */
+  function countTo(el, to) {
+    to = Number(to) || 0;
+    const from = el._v ?? 0;
+    if (el._v === to) return;
+    el._v = to;
+    cancelAnimationFrame(el._raf);
+    if (reduced || from === to) { el.textContent = num(to); return; }
+    const t0 = performance.now(), dur = 1100;
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = num(from + (to - from) * e);
+      if (p < 1) el._raf = requestAnimationFrame(step);
+    };
+    el._raf = requestAnimationFrame(step);
+  }
+
+  /* ---------- Value formatters for data-fmt ---------- */
+  function dur(sec) {
+    const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+    return d > 0 ? t('dur.dh', { d: num(d), h: num(h) }) : t('dur.hm', { h: num(h), m: num(m) });
+  }
+  const FMT = {
+    dur,
+    ms: (v) => num(v) + ' ms',
+    pct: (v) => num(v) + '%',
+    state: (v) => t('state.' + (v === 'ok' ? 'ok' : 'na'))
+  };
+
+  /* ---------- Plans ---------- */
+  const planList = $('#planList');
+  function renderPlans(plans) {
+    plans.forEach((p) => {
+      const meta = PLAN[p.id]; if (!meta) return;
+      let el = planList.querySelector(`[data-id="${p.id}"]`);
+      if (!el) {
+        el = document.createElement('li');
+        el.className = 'plan'; el.dataset.id = p.id; el.style.setProperty('--c', meta.color);
+        el.innerHTML = `
+          <div class="plan-id"><span class="plan-ico">${icons[meta.icon]}</span><div><div class="plan-name"></div><div class="plan-tag"></div></div></div>
+          <div><div class="bar"><i></i></div><div class="bar-cap"></div></div>
+          <dl class="plan-metrics">
+            <div class="metric"><dt></dt><dd data-f="total"></dd></div>
+            <div class="metric"><dt></dt><dd data-f="active"></dd></div>
+          </dl>`;
+        planList.appendChild(el);
+      }
+      const share = p.total ? Math.round((p.active / p.total) * 100) : 0;
+      $('.plan-name', el).textContent = t(meta.name);
+      $('.plan-tag', el).textContent = t(meta.tag);
+      $('.bar i', el).style.width = share + '%';
+      $('.bar-cap', el).textContent = t('plan.activeShare', { p: num(share) });
+      const dts = $$('dt', el); dts[0].textContent = t('metric.taken'); dts[1].textContent = t('metric.active'); 
+      $('[data-f="total"]', el).textContent = num(p.total);
+      $('[data-f="active"]', el).textContent = num(p.active);
+    });
+  }
+
+  /* ---------- Donut ---------- */
+  const donut = $('#donut'), legend = $('#legend');
+  donut.innerHTML = `<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="50" stroke="rgba(120,170,255,.1)"/></svg><div class="donut-center"><b></b><span></span></div>`;
+  function renderDonut(plans, total) {
+    const svg = $('svg', donut);
+    let acc = 0;
+    const GAP = 1.2;
+    plans.forEach((p) => {
+      const meta = PLAN[p.id]; if (!meta) return;
+      let c = svg.querySelector(`[data-id="${p.id}"]`);
+      if (!c) {
+        c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('class', 'seg'); c.dataset.id = p.id;
+        c.setAttribute('cx', 60); c.setAttribute('cy', 60); c.setAttribute('r', 50);
+        c.setAttribute('pathLength', 100); c.setAttribute('stroke', meta.color); c.style.color = meta.color;
+        c.style.strokeDasharray = '0 100';
+        svg.appendChild(c);
+      }
+      const pct = total ? (p.total / total) * 100 : 0;
+      c.style.strokeDasharray = `${Math.max(0, pct - GAP)} ${100 - Math.max(0, pct - GAP)}`;
+      c.style.strokeDashoffset = -acc;
+      acc += pct;
+    });
+    $('.donut-center b', donut).textContent = num(total);
+    $('.donut-center span', donut).textContent = t('dist.center');
+    legend.innerHTML = plans.map((p) => {
+      const meta = PLAN[p.id]; if (!meta) return '';
+      const pct = total ? Math.round((p.total / total) * 100) : 0;
+      return `<li style="--c:${meta.color}"><i></i><span>${t(meta.name)}</span><b>${num(p.total)}</b><small>${num(pct)}%</small></li>`;
+    }).join('');
+  }
+
+  /* ---------- Latest selfs ---------- */
+  const userList = $('#userList'), seenUsers = new Set();
+  let usersReady = false;
+  function renderUsers(rows) {
+    userList.innerHTML = rows.map((r) => {
+      const meta = PLAN[r.plan] || PLAN.regular, isNew = usersReady && !seenUsers.has(r.id);
+      return `<li class="user${isNew ? ' is-new' : ''}" style="--c:${meta.color}">
+        <div class="user-id"><span class="avatar">${esc(r.user.slice(0, 2))}</span><span class="user-name">${esc(r.user)}</span></div>
+        <span class="tag">${t(meta.name)}</span>
+        <span class="state" data-s="${r.status}"><i></i>${t('users.' + r.status)}</span>
+        <span class="user-time">${i18n.rel(r.startedAt)}</span></li>`;
+    }).join('');
+    rows.forEach((r) => seenUsers.add(r.id));
+    usersReady = true;
+  }
+
+  /* ---------- Activity feed ---------- */
+  const feed = $('#activityList'), seenActs = new Set();
+  let feedReady = false;
+  const feedIcon = { system: 'dashboard', self: 'selfs', server: 'plans', db: 'activity', shop: 'shop', user: 'userPlus' };
+  function renderActivities(items) {
+    feed.innerHTML = items.slice(0, 9).map((a) => {
+      const isNew = feedReady && !seenActs.has(a.id);
+      const params = { ...(a.params || {}) };
+      if (params.plan) params.plan = t(PLAN[params.plan] ? PLAN[params.plan].name : params.plan);
+      if (params.n != null) params.n = num(params.n);
+      return `<li class="${isNew ? 'is-new' : ''}">
+        <span class="feed-ico">${icons[feedIcon[a.type]] || icons.activity}</span>
+        <span class="feed-msg">${esc(t(a.key, params))}</span>
+        <span class="feed-time">${i18n.clock(a.time)}</span></li>`;
+    }).join('');
+    items.forEach((a) => seenActs.add(a.id));
+    feedReady = true;
+  }
+
+  /* ---------- Chart ---------- */
+  const chart = SX.Chart($('#chart'), $('#chartTip'), { fmt: (n) => num(n) });
+  let lastAnalytics = null, lastLang = null;
+  function renderChart(a) {
+    if (!a || !a.values || !a.values.length) return;
+    if (a === lastAnalytics && lastLang === i18n.lang) return;
+    const sameData = a === lastAnalytics;
+    lastAnalytics = a; lastLang = i18n.lang;
+    const labels = a.hours.map((h) => i18n.digits(String(h).padStart(2, '0') + ':00'));
+    chart.setData({ labels, values: a.values }, sameData);
+  }
+
+  /* ---------- Main render ---------- */
+  function render(s) {
+    $$('[data-bind]').forEach((el) => {
+      const v = get(s, el.dataset.bind);
+      if (v == null) return;
+      if (el.hasAttribute('data-count')) countTo(el, v);
+      else if (el.dataset.fmt) el.textContent = FMT[el.dataset.fmt](v);
+      else el.textContent = v;
+    });
+    $$('.stat').forEach((card) => {
+      const p = ringPct[card.dataset.stat](s);
+      $('.ring-prog', card).style.strokeDasharray = `${Math.max(0, Math.min(100, p)).toFixed(1)} 100`;
+    });
+    $('#systemPill').dataset.status = s.systemOnline ? 'online' : 'offline';
+    $('#systemPillText').textContent = t(s.systemOnline ? 'status.online' : 'status.offline');
+    const shop = s.shop.status === 'online' ? 'online' : 'offline';
+    $('#shopPill').dataset.status = shop;
+    $('#shopPillText').textContent = t('shop.' + shop);
+    renderPlans(s.plans);
+    renderDonut(s.plans, s.selfs.total);
+    renderUsers(s.latestSelfs);
+    renderActivities(s.activities);
+    renderChart(s.analytics);
+    $('#simBtn').textContent = t(SX.sim.running ? 'settings.on' : 'settings.off');
+  }
+
+  /* ---------- Language ---------- */
+  function onLang() {
+    i18n.apply();
+    $('#langLabel').textContent = i18n.lang === 'fa' ? 'EN' : 'FA';
+    $$('[data-count]').forEach((el) => { if (el._v != null) el.textContent = num(el._v); });
+    render(store.get());
+    requestAnimationFrame(() => chart.resize());
+  }
+  i18n.onChange(onLang);
+  $('#langBtn').addEventListener('click', () => i18n.setLang(i18n.lang === 'fa' ? 'en' : 'fa'));
+
+  /* ---------- Router ---------- */
+  function route() {
+    const view = location.hash.replace('#/', '') || 'dashboard';
+    $$('.panel[data-views]').forEach((p) => { p.hidden = !p.dataset.views.split(' ').includes(view); });
+    $$('.nav-item').forEach((a) => {
+      const on = a.dataset.view === view;
+      a.classList.toggle('is-active', on);
+      on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
+    });
+    requestAnimationFrame(() => chart.resize());
+  }
+  addEventListener('hashchange', route);
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-action]');
+    if (!b) return;
+    const a = b.dataset.action;
+    if (a === 'lang-fa') i18n.setLang('fa');
+    if (a === 'lang-en') i18n.setLang('en');
+    if (a === 'sim-toggle') { SX.sim.toggle(); render(store.get()); }
+  });
+
+  /* ---------- Boot ---------- */
+  async function boot() {
+    SX.Particles($('#particles'));
+    i18n.apply();
+    $('#langLabel').textContent = i18n.lang === 'fa' ? 'EN' : 'FA';
+    store.subscribe(render);
+    route();
+    try {
+      const [snap, analytics] = await Promise.all([api.getSnapshot(), api.getAnalytics()]);
+      store.set({ ...snap, analytics });
+    } catch (err) {
+      console.error('Initial load failed', err);
+      store.set({ system: { apiStatus: 'na', database: 'na' } });
+    }
+    realtime.start();
+    render(store.get());
+    setInterval(() => render(store.get()), 20000);   // keeps "x min ago" fresh
+  }
+  boot();
+})();
+
+</script>
+</body>
+</html>
